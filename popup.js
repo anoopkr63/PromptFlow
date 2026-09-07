@@ -50,4 +50,23 @@ $("#perConversation").addEventListener("change", (e) =>
   chrome.storage.local.set({ perConversation: e.target.checked })
 );
 
+// Reopens the image queue panel on the current ChatGPT tab after ×.
+$("#showPanel").addEventListener("click", async () => {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id || !/^https:\/\/(chatgpt\.com|chat\.openai\.com)\//.test(tab.url || "")) {
+      return setStatus("Open a ChatGPT tab first.", "warn");
+    }
+    const r = await chrome.tabs.sendMessage(tab.id, { type: "show-panel" }).catch(() => null);
+    if (r?.ok) {
+      setStatus("Image queue is open on this tab.", "ok");
+      setTimeout(() => window.close(), 600);
+    } else {
+      setStatus("Refresh the ChatGPT tab, then try again.", "warn");
+    }
+  } catch (e) {
+    setStatus(String(e?.message || e), "warn");
+  }
+});
+
 load();

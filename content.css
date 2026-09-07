@@ -226,6 +226,11 @@
 }
 .cgpt-b-close:hover { background: var(--shell-2); color: var(--danger); }
 
+/* × state: hide everything injected. A body class does it because the
+   author display rules below override the [hidden] attribute. */
+body.cgpt-dl-off #cgpt-dl-bar,
+body.cgpt-dl-off .cgpt-dl-btn { display: none !important; }
+
 /* progress hairline under the header */
 .cgpt-b-progress {
   position: absolute;

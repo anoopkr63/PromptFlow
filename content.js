@@ -1,7 +1,7 @@
 (() => {
   const MIN_SIZE = 150; // px — filters out avatars, icons, logos
   const MARK = "cgptDlAttached";
-  let dead = false; // set by kill(): the extension is torn down until the page reloads
+  let dead = false; // set by hideUI(): nothing attaches until showUI() runs
 
   // Last-resort net: any promise anywhere (including Chrome's own internal
   // callbacks) that rejects because the extension was reloaded gets turned into
@@ -263,7 +263,7 @@
 
   window.__cgptDL = {
     collect, save, isContentImage, isGenerated, imageKey, sizeOf, debugImages,
-    convoId, extAlive, showStale, toDataUrl, batchBase, portable, kill
+    convoId, extAlive, showStale, toDataUrl, batchBase, portable, hideUI, showUI
   };
 
   // The batch panel's file name is the single source of truth for frame
@@ -299,14 +299,21 @@
   });
   mo.observe(document.body, { childList: true, subtree: true });
 
-  // Full teardown for the panel's × button: every injected element goes,
-  // the observer stops, and nothing re-attaches itself afterwards.
-  function kill() {
+  // × hides every injected element; the popup's "Open image queue" button
+  // brings it all back. A body class hides the bar + buttons (their author
+  // display rules override the [hidden] attribute), while disconnecting the
+  // observer + the dead flag stop anything new from attaching meanwhile.
+  function hideUI() {
     dead = true;
     try { mo.disconnect(); } catch {}
     clearTimeout(t);
-    bar?.remove();
+    document.body.classList.add("cgpt-dl-off");
     document.getElementById("cgpt-dl-stale")?.remove();
-    document.querySelectorAll(".cgpt-dl-btn").forEach((b) => b.remove());
+  }
+  function showUI() {
+    dead = false;
+    document.body.classList.remove("cgpt-dl-off");
+    try { mo.observe(document.body, { childList: true, subtree: true }); } catch {}
+    refresh();
   }
 })();

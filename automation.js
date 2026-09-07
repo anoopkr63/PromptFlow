@@ -725,18 +725,27 @@
     q(".cgpt-b-toggle").textContent = panel.classList.contains("collapsed") ? "+" : "–";
   });
 
-  // × kills the extension completely: stops any run, tells the background
-  // worker to stand down, removes every injected element (panel, download
-  // buttons, floating bar) and disconnects the page observer. The page goes
-  // back to plain ChatGPT until it is reloaded.
+  // × closes everything the extension put on the page: stops any run, tells
+  // the background worker to stand down, hides the panel, bar and download
+  // buttons, and stops the observer. Nothing is destroyed, so the popup's
+  // "Open image queue" button can bring it all back without a reload.
   q(".cgpt-b-close").addEventListener("click", async () => {
     killed = true;
     abort = true;
     running = false;
     try { await ticker(false); } catch {}
     try { await capture(false); } catch {}
-    try { dl().kill?.(); } catch {}
-    panel.remove();
+    try { dl().hideUI?.(); } catch {}
+    panel.hidden = true;
+  });
+
+  // Popup's "Open image queue" button: restore the panel after ×.
+  chrome.runtime.onMessage.addListener((msg, _s, sendResponse) => {
+    if (msg?.type !== "show-panel") return;
+    killed = false;
+    panel.hidden = false;
+    try { dl().showUI?.(); } catch {}
+    sendResponse({ ok: true });
   });
   q(".cgpt-b-change").addEventListener("click", () => {
     try { chrome.runtime.sendMessage({ type: "open-picker" }); } catch {}
