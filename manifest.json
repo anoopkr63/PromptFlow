@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ChatGPT Image Downloader",
-  "version": "2.1.2",
+  "version": "2.1.3",
   "description": "Download ChatGPT images to a folder you pick, and batch-run image prompts one after another.",
   "permissions": [
     "contextMenus",

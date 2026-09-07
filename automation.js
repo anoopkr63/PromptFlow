@@ -380,9 +380,21 @@
   async function waitForImage({ turnsBefore, before, seen, prompt }, onTick, note) {
     const deadline = Date.now() + TIMEOUT_MS;
     const key = dl().imageKey;
-    const isNew = (u) => u && !seen.has(key(u)) && !before.has(key(u));
+    // Your uploaded photo re-fetches as your message renders — a real,
+    // full-size image URL. When streaming pauses mid-generation (!busy after
+    // sawGen), that refetch was mistaken for the finished result, so every
+    // frame-N ended up a copy of your upload. Its file id is known the moment
+    // your turn renders, so exclude anything from your own turns/composer.
+    const own = new Set();
+    const refreshOwn = () => {
+      for (const img of document.querySelectorAll("img")) {
+        if (!dl().isGenerated(img)) own.add(key(img.currentSrc || img.src));
+      }
+    };
+    const isNew = (u) => u && !seen.has(key(u)) && !before.has(key(u)) && !own.has(key(u));
     let lastSrc = null, stable = 0, sawGenerating = false, told = false, polls = 0, dry = 0;
     let lastCap = -1;
+    refreshOwn();
 
     while (Date.now() < deadline) {
       if (abort) throw new Error("stopped");
@@ -391,6 +403,7 @@
 
       const busy = isGenerating();
       if (busy) sawGenerating = true;
+      refreshOwn(); // your upload's file id lands here once your turn renders
 
       const nodes = turnNodes();
       const tail = nodes[nodes.length - 1];
