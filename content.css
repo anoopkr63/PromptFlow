@@ -6,6 +6,7 @@
 
 #cgpt-batch,
 #cgpt-dl-bar,
+#cgpt-batch-reopen,
 #cgpt-dl-stale {
   /* Porcelain (light) */
   --ink: #16181d;
@@ -32,6 +33,7 @@
 @media (prefers-color-scheme: dark) {
   #cgpt-batch,
   #cgpt-dl-bar,
+  #cgpt-batch-reopen,
   #cgpt-dl-stale {
     /* Graphite (dark) */
     --ink: #edeef0;
@@ -210,6 +212,43 @@
   transition: background 0.16s var(--tap), color 0.16s var(--tap);
 }
 .cgpt-b-toggle:hover { background: var(--shell-2); color: var(--ink); }
+.cgpt-b-close {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-faint);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.16s var(--tap), color 0.16s var(--tap);
+}
+.cgpt-b-close:hover { background: var(--shell-2); color: var(--danger); }
+
+/* reopen bubble shown while the queue panel is closed */
+#cgpt-batch-reopen {
+  position: fixed;
+  right: 22px;
+  bottom: 92px;
+  z-index: 2147483000;
+  padding: 9px 15px;
+  border: 0.5px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--shell) 88%, transparent);
+  backdrop-filter: blur(24px) saturate(1.7);
+  box-shadow: var(--lift);
+  color: var(--ink-soft);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  animation: cgpt-rise 0.42s var(--tap) both;
+}
+#cgpt-batch-reopen:hover { color: var(--ink); }
+#cgpt-batch-reopen[hidden] { display: none; }
 
 /* progress hairline under the header */
 .cgpt-b-progress {

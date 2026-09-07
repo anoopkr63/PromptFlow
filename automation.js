@@ -481,6 +481,7 @@
       <span>Image queue</span>
       <em class="cgpt-b-ver"></em>
       <button class="cgpt-b-toggle" type="button" title="Collapse">–</button>
+      <button class="cgpt-b-close" type="button" title="Close panel">×</button>
       <i class="cgpt-b-progress"></i>
     </div>
     <div class="cgpt-b-body">
@@ -722,6 +723,29 @@
     panel.classList.toggle("collapsed");
     q(".cgpt-b-toggle").textContent = panel.classList.contains("collapsed") ? "+" : "–";
   });
+
+  // Close hides the whole panel; a small bubble reopens it. The choice
+  // persists so a reload doesn't resurrect a dismissed panel.
+  const reopenBtn = document.createElement("button");
+  reopenBtn.id = "cgpt-batch-reopen";
+  reopenBtn.type = "button";
+  reopenBtn.title = "Open image queue";
+  reopenBtn.textContent = "Image queue";
+  reopenBtn.hidden = true;
+  document.body.appendChild(reopenBtn);
+
+  function setClosed(closed, persist = true) {
+    panel.hidden = closed;
+    reopenBtn.hidden = !closed;
+    if (persist) {
+      try {
+        if (dl().extAlive()) chrome.storage.local.set({ panelClosed: closed });
+      } catch {}
+    }
+  }
+
+  q(".cgpt-b-close").addEventListener("click", () => setClosed(true));
+  reopenBtn.addEventListener("click", () => setClosed(false));
   q(".cgpt-b-change").addEventListener("click", () => {
     try { chrome.runtime.sendMessage({ type: "open-picker" }); } catch {}
   });
@@ -1178,10 +1202,11 @@
 
   // ---------- boot ----------
   (async () => {
-    let saved = { batchRows: [], batchBase: "frame" };
+    let saved = { batchRows: [], batchBase: "frame", panelClosed: false };
     try {
-      if (dl().extAlive()) saved = await chrome.storage.local.get({ batchRows: [], batchBase: "frame" });
+      if (dl().extAlive()) saved = await chrome.storage.local.get({ batchRows: [], batchBase: "frame", panelClosed: false });
     } catch {}
+    setClosed(saved.panelClosed === true, false);
     baseEl.value = saved.batchBase || "frame";
     const list = saved.batchRows?.length ? saved.batchRows : ["", "", ""];
     list.forEach((t) => addRow(t));
