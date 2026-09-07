@@ -1,6 +1,7 @@
 (() => {
   const MIN_SIZE = 150; // px — filters out avatars, icons, logos
   const MARK = "cgptDlAttached";
+  let dead = false; // set by kill(): the extension is torn down until the page reloads
 
   // Last-resort net: any promise anywhere (including Chrome's own internal
   // callbacks) that rejects because the extension was reloaded gets turned into
@@ -169,6 +170,7 @@
   }
 
   function refresh() {
+    if (dead) return;
     collect().forEach((img, i) => attachButton(img, i + 1));
     const n = collect().length;
     if (bar) {
@@ -261,7 +263,7 @@
 
   window.__cgptDL = {
     collect, save, isContentImage, isGenerated, imageKey, sizeOf, debugImages,
-    convoId, extAlive, showStale, toDataUrl, batchBase, portable
+    convoId, extAlive, showStale, toDataUrl, batchBase, portable, kill
   };
 
   // The batch panel's file name is the single source of truth for frame
@@ -290,8 +292,21 @@
 
   // ChatGPT streams DOM in; re-scan on mutations (debounced) and on SPA navigation.
   let t;
-  new MutationObserver(() => {
+  const mo = new MutationObserver(() => {
+    if (dead) return;
     clearTimeout(t);
     t = setTimeout(refresh, 400);
-  }).observe(document.body, { childList: true, subtree: true });
+  });
+  mo.observe(document.body, { childList: true, subtree: true });
+
+  // Full teardown for the panel's × button: every injected element goes,
+  // the observer stops, and nothing re-attaches itself afterwards.
+  function kill() {
+    dead = true;
+    try { mo.disconnect(); } catch {}
+    clearTimeout(t);
+    bar?.remove();
+    document.getElementById("cgpt-dl-stale")?.remove();
+    document.querySelectorAll(".cgpt-dl-btn").forEach((b) => b.remove());
+  }
 })();

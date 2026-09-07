@@ -45,6 +45,7 @@
 
   let running = false;
   let abort = false;
+  let killed = false; // × was pressed: the extension is dead until the page is reloaded
 
   // --- trace -------------------------------------------------------------
   // Every boundary the run crosses is recorded with a timestamp, so a stall can
@@ -724,28 +725,19 @@
     q(".cgpt-b-toggle").textContent = panel.classList.contains("collapsed") ? "+" : "–";
   });
 
-  // Close hides the whole panel; a small bubble reopens it. The choice
-  // persists so a reload doesn't resurrect a dismissed panel.
-  const reopenBtn = document.createElement("button");
-  reopenBtn.id = "cgpt-batch-reopen";
-  reopenBtn.type = "button";
-  reopenBtn.title = "Open image queue";
-  reopenBtn.textContent = "Image queue";
-  reopenBtn.hidden = true;
-  document.body.appendChild(reopenBtn);
-
-  function setClosed(closed, persist = true) {
-    panel.hidden = closed;
-    reopenBtn.hidden = !closed;
-    if (persist) {
-      try {
-        if (dl().extAlive()) chrome.storage.local.set({ panelClosed: closed });
-      } catch {}
-    }
-  }
-
-  q(".cgpt-b-close").addEventListener("click", () => setClosed(true));
-  reopenBtn.addEventListener("click", () => setClosed(false));
+  // × kills the extension completely: stops any run, tells the background
+  // worker to stand down, removes every injected element (panel, download
+  // buttons, floating bar) and disconnects the page observer. The page goes
+  // back to plain ChatGPT until it is reloaded.
+  q(".cgpt-b-close").addEventListener("click", async () => {
+    killed = true;
+    abort = true;
+    running = false;
+    try { await ticker(false); } catch {}
+    try { await capture(false); } catch {}
+    try { dl().kill?.(); } catch {}
+    panel.remove();
+  });
   q(".cgpt-b-change").addEventListener("click", () => {
     try { chrome.runtime.sendMessage({ type: "open-picker" }); } catch {}
   });
@@ -1116,7 +1108,7 @@
           ? `${total}/${entries.length} done — ${left} failed, press Continue to retry`
           : `Done — all ${total} images`
     );
-    if (total) await makeZipNow(); // zip holds every image produced so far
+    if (total && !killed) await makeZipNow(); // zip holds every image produced so far
     finish();
   }
 
@@ -1131,7 +1123,7 @@
   }
 
   startBtn.addEventListener("click", () => {
-    if (running) return;
+    if (running || killed) return;
     startBtn.disabled = true;
     stopBtn.disabled = false;
     run(startBtn.dataset.mode === "resume" ? "resume" : "fresh");
@@ -1202,11 +1194,10 @@
 
   // ---------- boot ----------
   (async () => {
-    let saved = { batchRows: [], batchBase: "frame", panelClosed: false };
+    let saved = { batchRows: [], batchBase: "frame" };
     try {
-      if (dl().extAlive()) saved = await chrome.storage.local.get({ batchRows: [], batchBase: "frame", panelClosed: false });
+      if (dl().extAlive()) saved = await chrome.storage.local.get({ batchRows: [], batchBase: "frame" });
     } catch {}
-    setClosed(saved.panelClosed === true, false);
     baseEl.value = saved.batchBase || "frame";
     const list = saved.batchRows?.length ? saved.batchRows : ["", "", ""];
     list.forEach((t) => addRow(t));
