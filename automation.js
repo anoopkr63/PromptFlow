@@ -560,6 +560,17 @@
 
   const rows = () => [...rowsEl.querySelectorAll(".cgpt-row")];
 
+  // Whether saved files keep their file extension (frame-1.png) or not (frame-1).
+  let includeExt = true;
+  try {
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area === "local" && changes.includeExt) {
+        includeExt = changes.includeExt.newValue !== false;
+        renumber();
+      }
+    });
+  } catch {}
+
   function renumber() {
     rows().forEach((r, i) => {
       r.querySelector(".cgpt-row-n").textContent = i + 1;
@@ -567,7 +578,9 @@
     });
     const n = rows().length;
     const base = baseEl.value.trim() || "image";
-    hintEl.textContent = n ? `saves as ${base}-1 … ${base}-${n}` : "";
+    hintEl.textContent = n
+      ? (includeExt ? `saves as ${base}-1.png … ${base}-${n}.png` : `saves as ${base}-1 … ${base}-${n} (no extension)`)
+      : "";
     refreshControls();
     save();
   }
@@ -1044,7 +1057,7 @@
             img = await attempt(label);
           }
           seen.add(key(img.src));
-          row._out = { url: img.src, name: `${base}-${n}.${extOf(img.src)}` };
+          row._out = { url: img.src, name: includeExt ? `${base}-${n}.${extOf(img.src)}` : `${base}-${n}` };
           row.classList.add("done");
           row.classList.remove("failed");
           tr("saved", { file: `${base}-${n}`, url: key(img.src) });
@@ -1178,10 +1191,11 @@
 
   // ---------- boot ----------
   (async () => {
-    let saved = { batchRows: [], batchBase: "frame" };
+    let saved = { batchRows: [], batchBase: "frame", includeExt: true };
     try {
-      if (dl().extAlive()) saved = await chrome.storage.local.get({ batchRows: [], batchBase: "frame" });
+      if (dl().extAlive()) saved = await chrome.storage.local.get({ batchRows: [], batchBase: "frame", includeExt: true });
     } catch {}
+    includeExt = saved.includeExt !== false;
     baseEl.value = saved.batchBase || "frame";
     const list = saved.batchRows?.length ? saved.batchRows : ["", "", ""];
     list.forEach((t) => addRow(t));

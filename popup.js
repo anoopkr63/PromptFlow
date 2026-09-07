@@ -9,11 +9,12 @@ function setStatus(text, cls = "") {
 
 async function load() {
   const cfg = await chrome.storage.local.get({
-    mode: "downloads", subfolder: "ChatGPT", folderName: "", perConversation: false
+    mode: "downloads", subfolder: "ChatGPT", folderName: "", perConversation: false, includeExt: true
   });
   modeInputs.forEach((i) => (i.checked = i.value === cfg.mode));
   $("#subfolder").value = cfg.subfolder;
   $("#perConversation").checked = cfg.perConversation;
+  $("#includeExt").checked = cfg.includeExt;
   $("#folder").textContent = cfg.folderName ? `📁 ${cfg.folderName}` : "No folder chosen";
 
   if (cfg.mode !== "folder") return setStatus("");
@@ -48,6 +49,9 @@ $("#subfolder").addEventListener("change", (e) =>
 );
 $("#perConversation").addEventListener("change", (e) =>
   chrome.storage.local.set({ perConversation: e.target.checked })
+);
+$("#includeExt").addEventListener("change", (e) =>
+  chrome.storage.local.set({ includeExt: e.target.checked })
 );
 
 load();

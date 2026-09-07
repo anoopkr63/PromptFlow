@@ -196,12 +196,14 @@
       zip.disabled = true;
       zip.textContent = "…";
       const base = await batchBase();
+      const ext = await withExt();
       const stamp = new Date().toISOString().slice(0, 10);
       const raw = imgs.map((img, i) => {
         const m = (() => {
           try { return new URL(img.src).pathname.match(/\.(png|jpe?g|webp|gif)$/i); } catch { return null; }
         })();
-        return { url: img.src, name: `${base}-${i + 1}.${m ? m[1].toLowerCase() : "png"}` };
+        const stem = `${base}-${i + 1}`;
+        return { url: img.src, name: ext ? `${stem}.${m ? m[1].toLowerCase() : "png"}` : stem };
       });
       const items = [];
       for (const it of raw) items.push(await portable(it));
@@ -272,6 +274,15 @@
       return (await chrome.storage.local.get({ batchBase: "frame" })).batchBase || "frame";
     } catch {
       return "frame";
+    }
+  }
+
+  async function withExt() {
+    try {
+      if (!extAlive()) return true;
+      return (await chrome.storage.local.get({ includeExt: true })).includeExt !== false;
+    } catch {
+      return true;
     }
   }
 

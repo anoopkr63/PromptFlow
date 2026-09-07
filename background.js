@@ -2,7 +2,7 @@
 // document (File System Access). Otherwise fall back to chrome.downloads,
 // which can only write inside the browser's Downloads folder.
 
-const DEFAULTS = { mode: "downloads", subfolder: "ChatGPT", folderName: "", perConversation: false };
+const DEFAULTS = { mode: "downloads", subfolder: "ChatGPT", folderName: "", perConversation: false, includeExt: true };
 
 const getCfg = async () => ({ ...DEFAULTS, ...(await chrome.storage.local.get(DEFAULTS)) });
 
@@ -19,13 +19,14 @@ function extFor(url, mime) {
   return "png";
 }
 
-function baseName({ url, convo, index, mime, name }) {
+function baseName({ url, convo, index, mime, name }, includeExt = true) {
   const ext = extFor(url, mime);
   // Batch runs supply their own name (e.g. "frame-3"); ad-hoc saves get date_convo_NN.
-  if (name) return `${sanitize(name)}.${ext}`;
+  if (name) return includeExt ? `${sanitize(name)}.${ext}` : sanitize(name);
   const stamp = new Date().toISOString().slice(0, 10);
   const n = String(index ?? 1).padStart(2, "0");
-  return `${stamp}_${sanitize(convo || "chat")}_${n}.${ext}`;
+  const stem = `${stamp}_${sanitize(convo || "chat")}_${n}`;
+  return includeExt ? `${stem}.${ext}` : stem;
 }
 
 // --- offscreen document ---
@@ -60,7 +61,7 @@ function viaDownloads(payload, cfg) {
     .filter(Boolean)
     .map((p) => p.split("/").map(sanitize).filter(Boolean).join("/"))
     .filter(Boolean);
-  const filename = [...parts, baseName(payload)].join("/");
+  const filename = [...parts, baseName(payload, cfg.includeExt)].join("/");
   return new Promise((resolve) => {
     // saveAs:false explicitly suppresses Chrome's "Ask where to save each file".
     chrome.downloads.download({ url: payload.url, filename, saveAs: false, conflictAction: "uniquify" }, (id) =>
@@ -76,7 +77,7 @@ async function handleDownload(payload) {
     const r = await askOffscreen({
       type: "write-file",
       url: payload.url,
-      filename: baseName(payload),
+      filename: baseName(payload, cfg.includeExt),
       subpath: cfg.perConversation ? sanitize(payload.convo) : ""
     });
     if (r?.ok) {
