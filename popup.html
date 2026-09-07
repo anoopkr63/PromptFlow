@@ -1,0 +1,25 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>ChatGPT Image Downloader</title>
+<link rel="stylesheet" href="popup.css">
+<div class="wrap">
+  <h1>Save images to</h1>
+
+  <label class="row"><input type="radio" name="mode" value="folder"><span>A folder I choose</span></label>
+  <div class="indent">
+    <button id="pick" class="btn">Choose folder…</button>
+    <div id="folder" class="muted">No folder chosen</div>
+  </div>
+
+  <label class="row"><input type="radio" name="mode" value="downloads"><span>Downloads folder</span></label>
+  <div class="indent">
+    <input id="subfolder" type="text" placeholder="ChatGPT" spellcheck="false">
+    <div class="muted">Subfolder inside Downloads</div>
+  </div>
+
+  <hr>
+  <label class="row"><input type="checkbox" id="perConversation"><span>Separate subfolder per conversation</span></label>
+  <div id="status" class="status"></div>
+</div>
+<script src="idb.js"></script>
+<script src="popup.js"></script>

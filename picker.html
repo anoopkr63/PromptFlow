@@ -1,0 +1,32 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Choose download folder</title>
+<link rel="stylesheet" href="popup.css">
+<div class="page">
+  <h2>Where ChatGPT images are saved</h2>
+  <p class="muted" id="current"></p>
+
+  <section id="fsa">
+    <button id="pick" class="btn big">Choose folder…</button>
+    <p id="status" class="status"></p>
+  </section>
+
+  <section id="fallback" hidden>
+    <div class="note" id="why"></div>
+    <p><b>Workaround — takes 20 seconds, works the same in the end:</b></p>
+    <ol>
+      <li>Open your browser's <b>Settings → Downloads</b> and set <b>Location</b>
+        to the folder you want (e.g. <code>/home/ajay/Pictures/monke</code>).</li>
+      <li>Leave "Ask where to save each file" <b>off</b>.</li>
+      <li>Set the subfolder below. Images land in
+        <code><span id="preview">Downloads/ChatGPT</span></code>.</li>
+    </ol>
+    <label class="field">Subfolder
+      <input id="subfolder" type="text" value="ChatGPT" spellcheck="false">
+    </label>
+    <p class="muted small">Leave it empty to save straight into the download
+      location with no subfolder.</p>
+  </section>
+</div>
+<script src="idb.js"></script>
+<script src="picker.js"></script>
