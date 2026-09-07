@@ -228,6 +228,14 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
+// No popup: the toolbar click opens the image queue panel directly.
+chrome.action.onClicked.addListener(async (tab) => {
+  try {
+    if (!tab?.id || !/^https:\/\/(chatgpt\.com|chat\.openai\.com)\//.test(tab.url || "")) return;
+    await chrome.tabs.sendMessage(tab.id, { type: "show-panel" });
+  } catch {}
+});
+
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId !== "cgpt-save-image" || !info.srcUrl) return;
   const convo = (tab?.url || "").split("/c/")[1]?.slice(0, 8) || "chat";
